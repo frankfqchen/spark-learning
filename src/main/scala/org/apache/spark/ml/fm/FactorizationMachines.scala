@@ -1,11 +1,13 @@
 package org.apache.spark.ml.fm
 
+import org.apache.spark.ml.linalg.{Vector, Vectors}
 import org.apache.spark.ml.optimization.ParallelStochasticGradientDescent
 import org.apache.spark.ml.param.shared.{HasMaxIter, HasStepSize, HasThreshold, HasTol}
 import org.apache.spark.ml.param.{Param, ParamMap, ParamValidators}
 import org.apache.spark.ml.util.{DefaultParamsWritable, Identifiable}
 import org.apache.spark.ml.{PredictionModel, Predictor, PredictorParams}
-import org.apache.spark.mllib.linalg.{DenseVector, Vector, Vectors, Vector => MLlibVector, Vectors => MLlibVectors}
+import org.apache.spark.mllib.linalg.VectorImplicits._
+import org.apache.spark.mllib.linalg.{DenseVector, Vector => MLlibVector, Vectors => MLlibVectors}
 import org.apache.spark.mllib.optimization.{Gradient, GradientDescent, LBFGS, Updater}
 import org.apache.spark.sql.Dataset
 import org.apache.spark.storage.StorageLevel

@@ -1,4 +1,4 @@
-package org.apache.spark.examples.ml
+package com.qingli.spark.examples.ml
 
 import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator
 import org.apache.spark.ml.fm.FactorizationMachines
@@ -26,10 +26,10 @@ object FactorizationMachinesExample {
       .setStepSize(0.01)
       .setUseBiasTerm(true)
       .setUseLinearTerms(true)
-      .setNumFactors(8)
+      .setNumFactors(10)
       .setRegParams((0, 1e-3, 1e-4))
       .setTol(1e-3)
-      .setMaxIter(10)
+      .setMaxIter(100)
       .setMiniBatchFraction(1)
 
     val fmModel = fm.fit(train)
