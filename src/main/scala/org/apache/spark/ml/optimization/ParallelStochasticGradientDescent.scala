@@ -16,7 +16,7 @@ class ParallelStochasticGradientDescent private[spark](private var gradient: Gra
   private var stepSize: Double = 1.0
   private var numIterations: Int = 100
   private var regParam: Double = 0.1
-  private var convergenceTol: Double = 0.0001
+  private var convergenceTol: Double = 0.001
 
   /**
     * Set the initial step size of parallel SGD for the first step. Default 1.0.
@@ -62,7 +62,17 @@ class ParallelStochasticGradientDescent private[spark](private var gradient: Gra
 
 
   /**
-    * Set the convergence tolerance. Default 0.0001.
+    * Set the convergence tolerance. Default 0.001
+    * convergenceTol is a condition which decides iteration termination.
+    * The end of iteration is decided based on below logic.
+    *
+    *  - If the norm of the new solution vector is >1, the diff of solution vectors
+    * is compared to relative tolerance which means normalizing by the norm of
+    * the new solution vector.
+    *  - If the norm of the new solution vector is <=1, the diff of solution vectors
+    * is compared to absolute tolerance which is not normalizing.
+    *
+    * Must be between 0.0 and 1.0 inclusively.
     *
     * @param convergenceTol
     * @return
@@ -76,7 +86,7 @@ class ParallelStochasticGradientDescent private[spark](private var gradient: Gra
 
 
   /**
-    * Set the gradient function (of loss function on one single data sample) to be used by Parallel SGD.
+    * Set the gradient function (of the loss function of one single data example) to be used by Parallel SGD.
     *
     * @param gradient
     * @return
@@ -121,19 +131,23 @@ class ParallelStochasticGradientDescent private[spark](private var gradient: Gra
   }
 }
 
+
 object ParallelStochasticGradientDescent extends Logging {
 
   private def isConverged(previousWeights: Vector,
                           currentWeights: Vector,
                           convergenceTol: Double): Boolean = {
 
+    // To compare with convergence tolerance.
     val previousBDV = previousWeights.asBreeze.toDenseVector
     val currentBDV = currentWeights.asBreeze.toDenseVector
 
-    val vecDiff: Double = norm(previousBDV - currentBDV)
+    // This represents the difference of updated weights in the iteration.
+    val solutionVecDiff: Double = norm(previousBDV - currentBDV)
 
-    vecDiff < convergenceTol * Math.max(norm(currentBDV), 1.0)
+    solutionVecDiff < convergenceTol * Math.max(norm(currentBDV), 1.0)
   }
+
 
   def runParallelSGD(data: RDD[(Double, Vector)],
                      gradient: Gradient,

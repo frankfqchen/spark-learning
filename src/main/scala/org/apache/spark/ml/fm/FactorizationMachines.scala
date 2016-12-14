@@ -283,21 +283,25 @@ class FactorizationMachines(override val uid: String)
 
     val gradient = new FactorizationMachinesGradient($(task), $(useBiasTerm), $(useLinearTerms), $(numFactors), numFeatures)
     val updater = new FactorizationMachinesUpdater($(useBiasTerm), $(useLinearTerms), $(numFactors), $(regParams), numFeatures)
+
     val optimizer = if ($(solver) == FactorizationMachines.GD) {
       new GradientDescent(gradient, updater)
         .setStepSize($(stepSize))
         .setConvergenceTol($(tol))
         .setNumIterations($(maxIter))
         .setMiniBatchFraction($(miniBatchFraction))
+
     } else if ($(solver) == FactorizationMachines.PSGD) {
       new ParallelStochasticGradientDescent(gradient, updater)
         .setStepSize($(stepSize))
         .setConvergenceTol($(tol))
         .setNumIterations($(maxIter))
+
     } else if ($(solver) == FactorizationMachines.LBFGS) {
       new LBFGS(gradient, updater)
         .setConvergenceTol($(tol))
         .setNumCorrections($(maxIter))
+
     } else {
       throw new IllegalArgumentException(s"The solver $solver is not supported by FactorizationMachines.")
     }
@@ -328,7 +332,7 @@ class FactorizationMachines(override val uid: String)
           Array.fill(numFeatures)(0.0))
 
       case (false, false) =>
-        Vectors.dense(Array.fill(numFeatures * $(numFactors))(Random.nextGaussian() * $(initialStd) + initMean)
+        Vectors.dense(Array.fill(numFeatures * $(numFactors))(Random.nextGaussian() * $(initialStd) + initMean))
     }
   }
 
@@ -371,8 +375,10 @@ class FactorizationMachinesModel private[ml](override val uid: String,
 
   override protected def predict(features: Vector): Double = {
     val (prediction, _) = FactorizationMachinesModel.predictAndSum(features, weights, useBiasTerm, useLinearTerms, numFactors, numFeatures)
+
     if (task == FactorizationMachines.Regression) {
       prediction
+
     } else if (task == FactorizationMachines.Classification) {
       val output = 1 / (1 + Math.exp(-prediction))
 
@@ -455,7 +461,7 @@ object FactorizationMachinesModel {
 /**
   * :: DeveloperApi ::
   * Compute gradient and loss for a Least-squared loss function, as used in factorization machines.
-  * For the detailed mathematical derivation, see the reference at
+  * For the detailed mathematical derivation, see the reference at:
   * Factorization Machines with libFM（http://doi.acm.org/10.1145/2168752.2168771）
   */
 class FactorizationMachinesGradient(val task: String,
@@ -474,11 +480,12 @@ class FactorizationMachinesGradient(val task: String,
   override def compute(data: MLlibVector, label: Double, weights: MLlibVector, cumGradient: MLlibVector): Double = {
     require(data.size == numFeatures)
 
-    val (prediction, sum) = FactorizationMachinesModel.predictAndSum(
-      data, weights, useBiasTerm, useLinearTerms, numFactors, numFeatures)
+    val (prediction, sum) = FactorizationMachinesModel.predictAndSum(data, weights, useBiasTerm, useLinearTerms, numFactors, numFeatures)
+
     val multiplier = task match {
       case FactorizationMachines.Regression =>
         prediction - label
+
       case FactorizationMachines.Classification =>
         label * (1.0 / (1.0 + Math.exp(-prediction * label)) - 1.0)
     }
@@ -514,6 +521,7 @@ class FactorizationMachinesGradient(val task: String,
     task match {
       case FactorizationMachines.Regression =>
         (prediction - label) * (prediction - label)
+
       case FactorizationMachines.Classification =>
         -Math.log(1 + 1 / (1 + Math.exp(-prediction * label)))
     }
